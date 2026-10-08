@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Network Monitor Dashboard{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="bg-gray-900 text-gray-200 font-sans p-6">
+    <div class="max-w-6xl mx-auto space-y-6">
+        <div class="flex items-center justify-between bg-gray-800 p-5 rounded-xl border border-gray-700">
+            <div class="flex items-center gap-4">
+                <div class="p-3 bg-blue-600 rounded-lg shadow-lg">
+                    <i class="fa-solid fa-network-wired text-xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Monitor de Rede</h1>
+                    <p class="text-sm text-gray-400">Atualização em Tempo Real</p>
+                </div>
+            </div>
+            <div class="flex gap-6">
+                <a href="{{ url_for('main.index') }}" class="text-gray-400 hover:text-white transition">Dashboard</a>
+                <a href="{{ url_for('main.reportar') }}" class="text-gray-400 hover:text-white transition">Reportar</a>
+                <div class="text-right border-l border-gray-600 pl-6">
+                    <p class="text-xs text-gray-400 uppercase font-semibold">Tráfego Atual (Down/Up)</p>
+                    <p class="text-lg font-bold text-green-400" id="ui-speed">-- / --</p>
+                </div>
+            </div>
+        </div>
+
+        {% block content %}{% endblock %}
+    </div>
+
+<!-- Scripts na ordem correta de dependência -->
+    <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

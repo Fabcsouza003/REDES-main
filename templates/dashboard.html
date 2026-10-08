@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="border-b border-gray-700 flex gap-6">
+    <button onclick="switchTab('registered')" id="tab-btn-registered" class="pb-3 text-blue-400 border-b-2 border-blue-500 font-semibold transition">
+        <i class="fa-solid fa-address-book mr-2"></i>Dispositivos Cadastrados
+    </button>
+    <button onclick="switchTab('all')" id="tab-btn-all" class="pb-3 text-gray-500 hover:text-gray-300 font-semibold transition">
+        <i class="fa-solid fa-radar mr-2"></i>Varredura Geral (Todos os IPs)
+    </button>
+</div>
+
+<!-- ABA 1: Cadastrados -->
+<!-- ABA 1: Cadastrados -->
+<div id="tab-registered" class="space-y-4 block">
+    <div class="flex justify-end gap-4">
+        <!-- NOVO BOTÃO DE SPEEDTEST -->
+        <button onclick="iniciarSpeedtest()" id="btn-speedtest" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-semibold shadow-lg transition flex items-center">
+            <i class="fa-solid fa-gauge-high mr-2"></i>Testar Velocidade Máxima
+        </button>
+        
+        <button onclick="openRegModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold shadow-lg transition">
+            <i class="fa-solid fa-plus mr-2"></i>Cadastrar Dispositivo
+        </button>
+    </div>
+    
+    <!-- Local para mostrar o resultado do teste -->
+    <div id="resultado-speedtest" class="hidden bg-gray-900 border border-purple-500 rounded-lg p-4 mb-4 flex justify-around text-center">
+        <div>
+            <p class="text-xs text-gray-400 uppercase">Download Máximo</p>
+            <p id="st-down" class="text-xl font-bold text-blue-400">--</p>
+        </div>
+        <div>
+            <p class="text-xs text-gray-400 uppercase">Upload Máximo</p>
+            <p id="st-up" class="text-xl font-bold text-purple-400">--</p>
+        </div>
+        <div>
+            <p class="text-xs text-gray-400 uppercase">Ping (Servidor)</p>
+            <p id="st-ping" class="text-xl font-bold text-green-400">--</p>
+        </div>
+    </div>
+    <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-lg">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-900/50 border-b border-gray-700 text-xs uppercase text-gray-400">
+                    <th class="p-4">Status</th>
+                    <th class="p-4">Nome / Tipo</th>
+                    <th class="p-4">IP</th>
+                    <th class="p-4">Latência</th>
+                    <th class="p-4 text-center">Ações</th>
+                </tr>
+            </thead>
+            <tbody id="registered-table" class="divide-y divide-gray-700/50"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ABA 2: Todos os IPs -->
+<div id="tab-all" class="space-y-4 hidden">
+    <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-lg">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-900/50 border-b border-gray-700 text-xs uppercase text-gray-400">
+                    <th class="p-4">Endereço IP</th>
+                    <th class="p-4">Tempo Conectado</th>
+                    <th class="p-4">Latência</th>
+                </tr>
+            </thead>
+            <tbody id="all-ips-table" class="divide-y divide-gray-700/50"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Cadastro -->
+<div id="reg-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-gray-800 border border-gray-700 rounded-xl p-6 w-96 shadow-2xl">
+        <h2 class="text-xl font-bold text-white mb-4">Novo Dispositivo</h2>
+        <div class="space-y-4">
+            <div>
+                <label class="text-xs text-gray-400">Endereço IP</label>
+                <input type="text" id="reg-ip" placeholder="192.168.10.x" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="text-xs text-gray-400">Nome de Identificação</label>
+                <input type="text" id="reg-name" placeholder="Ex: iPhone do João" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="text-xs text-gray-400">Tipo de Dispositivo</label>
+                <select id="reg-type" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white outline-none focus:border-blue-500">
+                    <option value="Smartphone">Smartphone</option>
+                    <option value="Laptop">Laptop / Notebook</option>
+                    <option value="Desktop">Desktop PC</option>
+                    <option value="Server">Servidor</option>
+                    <option value="SmartTV">Smart TV / IoT</option>
+                </select>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="closeRegModal()" class="w-1/2 bg-gray-700 hover:bg-gray-600 text-white p-2 rounded transition">Cancelar</button>
+                <button onclick="salvarDispositivo()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded transition font-bold">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% endblock %}

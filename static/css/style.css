@@ -1,0 +1,5 @@
+
+/* Custom styles not covered by Tailwind CSS can go here */
+body {
+    -webkit-font-smoothing: antialiased;
+}
