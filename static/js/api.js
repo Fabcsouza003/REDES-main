@@ -40,67 +40,64 @@ async function fetchData() {
         const res = await fetch('/api/data');
         const data = await res.json();
         
-        document.getElementById('ui-speed').innerText = `${data.dados_velocidade.download} / ${data.dados_velocidade.upload}`;
+        if (document.getElementById('st-up')) {
+            document.getElementById('st-up').innerText = `${data.dados_velocidade.upload}`;
+        }
+        if (document.getElementById('st-down')) {
+            document.getElementById('st-down').innerText = `${data.dados_velocidade.download}`;
+        }
 
         const onlineIps = {};
         data.all_active_ips.forEach(d => { onlineIps[d.ip] = d; });
 
         let regHtml = '';
+        let index = 1;
         for (const [ip, info] of Object.entries(data.registered_devices)) {
             const isOnline = !!onlineIps[ip];
-            const lat = isOnline ? `${onlineIps[ip].latency} ms` : '--';
-            const dot = isOnline ? 
-                '<div class="h-3 w-3 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]"></div>' : 
-                '<div class="h-3 w-3 rounded-full bg-red-500"></div>';
+            const statusTag = isOnline ? '[ONLINE]' : '[OFFLINE]';
+            const statusColor = isOnline ? 'text-white' : 'text-gray-500';
+            const prefix = index < 10 ? `E0${index}` : `E${index}`;
 
             regHtml += `
-                <tr class="hover:bg-gray-700/30 transition">
-                    <td class="p-4 flex justify-center">${dot}</td>
-                    <td class="p-4">
-                        <div class="flex items-center gap-3">
-                            <div class="text-xl">${getIcon(info.type)}</div>
-                            <div>
-                                <p class="font-medium text-gray-200">${info.name}</p>
-                                <p class="text-xs text-gray-500">${info.type}</p>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="p-4 font-mono text-sm text-gray-300">${ip}</td>
-                    <td class="p-4 text-sm font-mono text-gray-300">${lat}</td>
-                    <td class="p-4 text-center">
-                        <button onclick="removerDispositivo('${ip}')" class="text-gray-500 hover:text-red-400 transition">
-                            <i class="fa-solid fa-trash"></i>
+                <tr class="border-b border-white/10 hover:bg-white/5 transition">
+                    <td class="py-1 pr-2">${prefix} | ${info.name}</td>
+                    <td class="py-1 px-2 font-mono text-xs">| ${ip}</td>
+                    <td class="py-1 pl-2 text-right ${statusColor}">| ${statusTag}</td>
+                    <td class="py-1 pl-2 text-right">
+                        <button onclick="removerDispositivo('${ip}')" class="text-xs text-gray-500 hover:text-white transition">
+                            [X]
                         </button>
                     </td>
                 </tr>
             `;
+            index++;
         }
         
         if(Object.keys(data.registered_devices).length === 0) {
-            regHtml = `<tr><td colspan="5" class="text-center p-6 text-gray-500">Nenhum dispositivo cadastrado.</td></tr>`;
+            regHtml = `<tr><td colspan="4" class="text-center py-4 text-gray-400">Nenhum dispositivo cadastrado.</td></tr>`;
         }
         
         if(document.getElementById('registered-table')) {
             document.getElementById('registered-table').innerHTML = regHtml;
         }
 
+        let gridHtml = '';
         let allHtml = '';
         data.all_active_ips.forEach(d => {
+            gridHtml += `<div>${d.ip}</div>`;
             allHtml += `
-                <tr class="hover:bg-gray-700/30 transition">
-                    <td class="p-4 font-mono text-sm text-gray-300 flex items-center gap-2">
-                        <i class="fa-solid fa-circle-nodes text-gray-500"></i> ${d.ip}
-                    </td>
-                    <td class="p-4 text-sm font-mono text-blue-400">${d.uptime}</td>
-                    <td class="p-4 text-sm font-mono text-green-400">${d.latency} ms</td>
+                <tr class="border-b border-white/10 hover:bg-white/5 transition font-mono">
+                    <td class="py-1">${d.ip}</td>
+                    <td class="py-1">${d.uptime}</td>
+                    <td class="py-1">${d.latency} ms</td>
                 </tr>
             `;
         });
         
-        if(data.all_active_ips.length === 0) {
-            allHtml = `<tr><td colspan="3" class="text-center p-6 text-gray-500">Nenhum IP detectado online.</td></tr>`;
+        if(data.all_active_ips.length > 0 && document.getElementById('all-ips-grid')) {
+            document.getElementById('all-ips-grid').innerHTML = gridHtml;
         }
-        
+
         if(document.getElementById('all-ips-table')) {
             document.getElementById('all-ips-table').innerHTML = allHtml;
         }
@@ -112,34 +109,45 @@ async function iniciarSpeedtest() {
     const btn = document.getElementById('btn-speedtest');
     const resultDiv = document.getElementById('resultado-speedtest');
     
-    // Muda o botão para estado de carregamento
     btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Testando... (Aguarde 20s)';
-    btn.classList.replace('bg-purple-600', 'bg-gray-600');
+    btn.innerHTML = 'TESTANDO...';
+    btn.classList.add('opacity-50');
     
-    // Esconde resultados anteriores
-    resultDiv.classList.add('hidden');
-
     try {
-        // Chama a rota que criaremos no backend
         const res = await fetch('/api/iniciar_speedtest', { method: 'POST' });
         const data = await res.json();
         
         if (data.sucesso) {
-            // Mostra os resultados na tela
-            document.getElementById('st-down').innerText = `${data.download_mbps} Mbps`;
-            document.getElementById('st-up').innerText = `${data.upload_mbps} Mbps`;
-            document.getElementById('st-ping').innerText = `${data.ping_ms} ms`;
-            resultDiv.classList.remove('hidden');
+            document.getElementById('st-down').innerText = `${data.download_mbps} MB/s`;
+            document.getElementById('st-up').innerText = `${data.upload_mbps} MB/s`;
+            if (document.getElementById('st-ping')) {
+                document.getElementById('st-ping').innerText = `${data.ping_ms} ms`;
+            }
+            if (resultDiv) resultDiv.classList.remove('hidden');
         } else {
             alert("Erro ao realizar o teste: " + data.erro);
         }
     } catch (e) {
         alert("Falha na comunicação com o servidor.");
     } finally {
-        // Restaura o botão ao normal
         btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-gauge-high mr-2"></i>Testar Velocidade Máxima';
-        btn.classList.replace('bg-gray-600', 'bg-purple-600');
+        btn.innerHTML = 'Speedtest';
+        btn.classList.remove('opacity-50');
     }
 }
+
+async function requestGateway(){
+    const requestgate = await fetch('/api/requestGateway', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({"AAA":"1"})
+        })
+    const RES = await requestgate.json()
+    console.log(RES.gateway)
+
+    if (document.getElementById('gateway')){
+        document.getElementById('gateway').innerHTML = `AVAILABLE IP ADDRESS POOL (${RES.gateway})`
+    }
+}
+
+window.addEventListener("load", requestGateway())

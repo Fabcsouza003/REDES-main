@@ -9,6 +9,10 @@ from flask import Blueprint, jsonify, request, render_template
 import requests
 from .config import ROUTER_IP, INTERFACE_IP_PREFIX
 from .database import REGISTERED_DEVICES, DEVICE_FIRST_SEEN, STATE
+import collections
+# Adicione isso junto com o DEVICE_FIRST_SEEN no topo do seu arquivo:
+DEVICE_MISSING_COUNT = collections.defaultdict(int) 
+
 
 main_bp = Blueprint('main', __name__)
 
@@ -59,21 +63,40 @@ def formatar_uptime(segundos):
     h, m = divmod(m, 60)
     return f"{h:02d}:{m:02d}:{s:02d}"
 
+
+# Adicione isso junto com o DEVICE_FIRST_SEEN no topo do seu arquivo:
+
+
+import socket
+from concurrent.futures import ThreadPoolExecutor
+import subprocess
+import time
+
+DEVICE_MISSING_COUNT = collections.defaultdict(int) 
+
 def rotina_varredura_rede():
+    # Descobre o IP do próprio PC para garantir que ele apareça no painel
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        MEU_PC_IP = s.getsockname()[0]
+        s.close()
+    except Exception:
+        MEU_PC_IP = None
+
     while True:
         todos_os_ips = [f"{INTERFACE_IP_PREFIX}{i}" for i in range(1, 255)]
         
-        # Reduzido para 50 workers para evitar gargalos excessivos de processos no sistema
+        # 50 workers para evitar gargalos excessivos de processos no sistema
         with ThreadPoolExecutor(max_workers=50) as executor:
             executor.map(forcar_ping_rapido, todos_os_ips)
             
         try:
-            # Timeout aumentado de 2.0 para 5.0 segundos para suportar lentidões do SO
+            # Timeout de 5.0 segundos para suportar lentidões do SO
             resultado = subprocess.run(["arp", "-a"], stdout=subprocess.PIPE, text=True, timeout=5.0)
             linhas = resultado.stdout.split("\n")
         except Exception:
-            # Em vez de linhas = [] (que zera o painel), pula este ciclo de varredura
-            # e mantém os IPs que já estavam no painel até a próxima tentativa.
+            # Pula este ciclo de varredura se o comando travar, mantendo o painel intacto
             time.sleep(2)
             continue
 
@@ -83,20 +106,58 @@ def rotina_varredura_rede():
         ips_online_agora = []
         agora = time.time()
         
-        for r in resultados:
-            if r:
-                ip = r["ip"]
-                ips_online_agora.append(r)
-                if ip not in DEVICE_FIRST_SEEN:
-                    DEVICE_FIRST_SEEN[ip] = agora 
-        
-        ips_apenas = [d["ip"] for d in ips_online_agora]
-        ips_para_remover = [ip for ip in DEVICE_FIRST_SEEN if ip not in ips_apenas]
-        for ip in ips_para_remover:
-            del DEVICE_FIRST_SEEN[ip]
+        # Filtra e limpa resultados nulos da varredura ARP
+        resultados_validos = [r for r in resultados if r]
+        ips_detectados_no_arp = [r["ip"] for r in resultados_validos]
 
+        # --- TRATAMENTO 1 e 2: Forçar a inclusão do Roteador e do Próprio PC ---
+        # (O Windows não lista o próprio IP no arp -a, e às vezes omite o roteador)
+        for ip_obrigatorio in [ROUTER_IP, MEU_PC_IP]:
+            if ip_obrigatorio and ip_obrigatorio not in ips_detectados_no_arp:
+                lat = calcular_latencia(ip_obrigatorio) if ip_obrigatorio == ROUTER_IP else 0
+                resultados_validos.append({
+                    "ip": ip_obrigatorio,
+                    "latency": lat,
+                    "mac": "Interface Local" if ip_obrigatorio == MEU_PC_IP else "N/A"
+                })
+                ips_detectados_no_arp.append(ip_obrigatorio)
+
+        # Processa quem foi visto nesta varredura
+        for r in resultados_validos:
+            ip = r["ip"]
+            ips_online_agora.append(r)
+            DEVICE_MISSING_COUNT[ip] = 0 # Reseta o contador de falhas se foi visto
+            if ip not in DEVICE_FIRST_SEEN:
+                DEVICE_FIRST_SEEN[ip] = agora 
+        
+        # --- TRATAMENTO 3: Lógica de tolerância de 3 ciclos para remoção ---
+        for ip in list(DEVICE_FIRST_SEEN.keys()):
+            if ip not in ips_detectados_no_arp:
+                DEVICE_MISSING_COUNT[ip] += 1
+                # Se ainda não estourou o limite de 3 falhas, mantém o dispositivo ativo
+                if DEVICE_MISSING_COUNT[ip] < 3:
+                    # Tenta recuperar os dados antigos dele para não sumir do painel neste ciclo
+                    # (Apenas reconstrói uma estrutura básica para manter o Uptime correndo)
+                    ips_online_agora.append({
+                        "ip": ip,
+                        "latency": "timeout",
+                        "mac": "Oculto"
+                    })
+                else:
+                    # Estourou 3 falhas seguidas? Remove definitivamente da rede
+                    del DEVICE_FIRST_SEEN[ip]
+                    del DEVICE_MISSING_COUNT[ip]
+
+        # Formata a lista final que vai para o painel de exibição
         lista_formatada = []
+        # Remove duplicatas caso ocorram no append da tolerância
+        ips_processados_unicos = []
+        
         for d in ips_online_agora:
+            if d["ip"] in ips_processados_unicos:
+                continue
+            ips_processados_unicos.append(d["ip"])
+            
             tempo_online = agora - DEVICE_FIRST_SEEN[d["ip"]]
             lista_formatada.append({
                 "ip": d["ip"],
@@ -104,11 +165,22 @@ def rotina_varredura_rede():
                 "uptime": formatar_uptime(tempo_online)
             })
 
+        # --- TRATAMENTO 4: Tratamento de erros e ordenação segura por octeto ---
         STATE["lat_roteador"] = calcular_latencia(ROUTER_IP)
-        STATE["all_active_ips"] = sorted(lista_formatada, key=lambda x: int(x["ip"].split(".")[-1]))
         
-        # Aumentado o intervalo de 1.5 para 5 segundos para não sobrecarregar a rede
+        try:
+            STATE["all_active_ips"] = sorted(
+                lista_formatada, 
+                key=lambda x: int(x["ip"].split(".")[-1]) if x["ip"] else 999
+            )
+        except (ValueError, IndexError):
+            STATE["all_active_ips"] = lista_formatada # Fallback caso venha um IP inválido string
+
+        # Intervalo estável de 5 segundos para preservar a performance da máquina
         time.sleep(5.0)
+
+
+
 def formatar_velocidade(bytes_por_segundo):
     # Converte Bytes em bits (1 Byte = 8 bits)
     bits_por_segundo = bytes_por_segundo * 8
@@ -321,3 +393,7 @@ def api_unregister():
     if ip in REGISTERED_DEVICES:
         del REGISTERED_DEVICES[ip]
     return jsonify({"success": True})
+
+@main_bp.route("/api/requestGateway", methods=['POST'])
+def requestGate():
+    return jsonify({"gateway": ROUTER_IP})

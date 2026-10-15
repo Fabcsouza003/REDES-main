@@ -1,92 +1,162 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="border-b border-gray-700 flex gap-6">
-    <button onclick="switchTab('registered')" id="tab-btn-registered" class="pb-3 text-blue-400 border-b-2 border-blue-500 font-semibold transition">
-        <i class="fa-solid fa-address-book mr-2"></i>Dispositivos Cadastrados
-    </button>
-    <button onclick="switchTab('all')" id="tab-btn-all" class="pb-3 text-gray-500 hover:text-gray-300 font-semibold transition">
-        <i class="fa-solid fa-radar mr-2"></i>Varredura Geral (Todos os IPs)
-    </button>
-</div>
+<!-- Layout do Grid 2x2 Exatamente como na Imagem -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-<!-- ABA 1: Cadastrados -->
-<!-- ABA 1: Cadastrados -->
-<div id="tab-registered" class="space-y-4 block">
-    <div class="flex justify-end gap-4">
-        <!-- NOVO BOTÃO DE SPEEDTEST -->
-        <button onclick="iniciarSpeedtest()" id="btn-speedtest" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-semibold shadow-lg transition flex items-center">
-            <i class="fa-solid fa-gauge-high mr-2"></i>Testar Velocidade Máxima
-        </button>
-        
-        <button onclick="openRegModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold shadow-lg transition">
-            <i class="fa-solid fa-plus mr-2"></i>Cadastrar Dispositivo
-        </button>
-    </div>
-    
-    <!-- Local para mostrar o resultado do teste -->
-    <div id="resultado-speedtest" class="hidden bg-gray-900 border border-purple-500 rounded-lg p-4 mb-4 flex justify-around text-center">
+    <!-- BLOCK 01: SYSTEM IDENTIFICATION -->
+    <div class="bg-black text-white p-5 border-2 border-black min-h-[280px] flex flex-col justify-between relative overflow-hidden">
         <div>
-            <p class="text-xs text-gray-400 uppercase">Download Máximo</p>
-            <p id="st-down" class="text-xl font-bold text-blue-400">--</p>
+            <div class="border-b border-white/20 pb-2 mb-4 font-sans text-xs tracking-wider uppercase font-semibold text-white">
+                BLOCK 01: SYSTEM IDENTIFICATION
+            </div>
+            <div class="grid grid-cols-2 gap-2 items-start">
+                <div>
+                    <h1 class="text-3xl font-black uppercase tracking-tight leading-none mb-1">ACTIVE_TRAFFIC</h1>
+                    <h2 class="text-3xl font-black uppercase tracking-tight leading-none mb-2">EXPLORER_.</h2>
+                    <p class="text-xl font-bold tracking-tight text-white/90">[Brasil]</p>
+                </div>
+                <!-- SVG Logo central idêntico ao da imagem -->
+                <div class="flex justify-end pr-2 pt-1">
+                    <img src="/static/images/Design sem nome.png" alt="">
+                </div>
+            </div>
         </div>
-        <div>
-            <p class="text-xs text-gray-400 uppercase">Upload Máximo</p>
-            <p id="st-up" class="text-xl font-bold text-purple-400">--</p>
-        </div>
-        <div>
-            <p class="text-xs text-gray-400 uppercase">Ping (Servidor)</p>
-            <p id="st-ping" class="text-xl font-bold text-green-400">--</p>
-        </div>
-    </div>
-    <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-lg">
-        <table class="w-full text-left border-collapse">
-            <thead>
-                <tr class="bg-gray-900/50 border-b border-gray-700 text-xs uppercase text-gray-400">
-                    <th class="p-4">Status</th>
-                    <th class="p-4">Nome / Tipo</th>
-                    <th class="p-4">IP</th>
-                    <th class="p-4">Latência</th>
-                    <th class="p-4 text-center">Ações</th>
-                </tr>
-            </thead>
-            <tbody id="registered-table" class="divide-y divide-gray-700/50"></tbody>
-        </table>
-    </div>
-</div>
 
-<!-- ABA 2: Todos os IPs -->
-<div id="tab-all" class="space-y-4 hidden">
-    <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-lg">
-        <table class="w-full text-left border-collapse">
-            <thead>
-                <tr class="bg-gray-900/50 border-b border-gray-700 text-xs uppercase text-gray-400">
-                    <th class="p-4">Endereço IP</th>
-                    <th class="p-4">Tempo Conectado</th>
-                    <th class="p-4">Latência</th>
-                </tr>
-            </thead>
-            <tbody id="all-ips-table" class="divide-y divide-gray-700/50"></tbody>
-        </table>
-    </div>
-</div>
-
-<!-- Modal Cadastro -->
-<div id="reg-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-    <div class="bg-gray-800 border border-gray-700 rounded-xl p-6 w-96 shadow-2xl">
-        <h2 class="text-xl font-bold text-white mb-4">Novo Dispositivo</h2>
-        <div class="space-y-4">
+        <div class="pt-4 border-t border-white/20 flex justify-between items-end">
             <div>
-                <label class="text-xs text-gray-400">Endereço IP</label>
-                <input type="text" id="reg-ip" placeholder="192.168.10.x" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white outline-none focus:border-blue-500">
+                <h3 class="text-2xl font-black uppercase tracking-tight leading-none">Real-time packet transfer & </h3>
+                <h4 class="text-2xl font-black uppercase tracking-tight leading-none">local network telemetry.</h4>
+                <p class="text-lg font-bold tracking-tight text-white/90">[atx.co]</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="openRegModal()" class="bg-white text-black px-3 py-1.5 text-xs font-extrabold uppercase hover:bg-gray-200 transition">
+                    + Cadastrar
+                </button>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- BLOCK 02: NETWORK OVERVIEW -->
+    <div class="bg-black text-white p-5 border-2 border-black min-h-[280px] flex flex-col justify-between">
+        <div>
+            <div class="border-b border-white/20 pb-2 mb-3 font-sans text-xs tracking-wider uppercase font-semibold text-white">
+                BLOCK 02: NETWORK OVERVIEW
+            </div>
+            <h2 class="text-4xl font-black uppercase tracking-tight mb-2">SYSTEM OVERVIEW</h2>
+            <div class="border-t border-b border-white/20 py-2 my-2 text-sm font-bold tracking-wider uppercase">
+                LIVE_PACKET_TRAFFIC
+            </div>
+        </div>
+
+        <!-- Métrica de Tráfego / Speedtest com os IDs mantidos -->
+        <div class="grid grid-cols-2 divide-x divide-white/20 pt-2">
+            <div class="pr-4">
+                <div class="text-2xl font-extrabold tracking-tight flex items-center gap-1">
+                    <span>▲ UP:</span>
+                </div>
+                <div id="st-up" class="text-4xl lg:text-5xl font-black tracking-tight mt-1">1.51 GB/s</div>
+            </div>
+            <div class="pl-4">
+                <div class="text-2xl font-extrabold tracking-tight flex items-center gap-1">
+                    <span>▼ DOWN:</span>
+                </div>
+                <div id="st-down" class="text-4xl lg:text-5xl font-black tracking-tight mt-1">4.24 GB/s</div>
+            </div>
+        </div>
+
+        <div id="resultado-speedtest" class="hidden mt-3 pt-2 border-t border-white/20 text-xs font-mono flex justify-between text-gray-300">
+            <span>PING: <strong id="st-ping" class="text-white">--</strong></span>
+            <span>STATUS: <strong class="text-white">TESTE CONCLUÍDO</strong></span>
+        </div>
+    </div>
+
+    <!-- BLOCK 03: CONNECTED DEVICES -->
+    <div class="bg-black text-white p-5 border-2 border-black min-h-[300px] flex flex-col justify-between">
+        <div>
+            <div class="border-b border-white/20 pb-2 mb-3 font-sans text-xs tracking-wider uppercase font-semibold text-white flex justify-between items-center">
+                <span>BLOCK 03: CONNECTED DEVICES</span>
+                <button onclick="switchTab('registered')" id="tab-btn-registered" class="text-xs uppercase font-bold underline">Dispositivos Cadastrados</button>
+            </div>
+            <h2 class="text-xl font-bold uppercase tracking-tight mb-3">DEVICES:</h2>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse font-sans text-sm md:text-base">
+                    <tbody id="registered-table" class="divide-y divide-white/10 font-bold tracking-tight">
+                        <!-- Inserido dinamicamente pelo api.js -->
+                        <tr>
+                            <td class="py-1">E01 | Core Switch</td>
+                            <td class="py-1">| 192.168.0.1</td>
+                            <td class="py-1 text-right">| [ONLINE]</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- BLOCK 04: IP ADDRESS POOL -->
+    <div class="bg-black text-white p-5 border-2 border-black min-h-[300px] flex flex-col justify-between">
+        <div>
+            <div class="border-b border-white/20 pb-2 mb-3 font-sans text-xs tracking-wider uppercase font-semibold text-white flex justify-between items-center">
+                <span>BLOCK 04: IP ADDRESS POOL</span>
+                <button onclick="switchTab('all')" id="tab-btn-all" class="text-xs uppercase font-bold text-gray-400 hover:text-white">Varredura Geral</button>
+            </div>
+            
+            <div class="flex justify-between items-center text-xs font-bold uppercase tracking-tight mb-3">
+                <span id="gateway">AVAILABLE IP ADDRESS POOL (Not Provided)</span>
+                <!-- Progress Bar estilo wireframe da imagem -->
+                <div class="w-32 h-3 border border-white p-0.5">
+                    <div class="bg-white h-full w-[85%]"></div>
+                </div>
+            </div>
+
+            <!-- Tabela e Grid de IPs estilo matriz da imagem -->
+            <div id="tab-registered-view">
+                <div id="all-ips-grid" class="grid grid-cols-2 md:grid-cols-4 gap-x-2 gap-y-1 font-mono text-xs md:text-sm tracking-tighter text-white/90">
+                    <!-- Preenchido via API/JS ou fallback -->
+                    
+                </div>
+            </div>
+
+            <!-- Tabela completa oculta para alternância de abas -->
+            <div id="tab-all" class="hidden overflow-x-auto mt-2">
+                <table class="w-full text-left font-mono text-xs">
+                    <thead>
+                        <tr class="border-b border-white/20 uppercase text-gray-400">
+                            <th class="py-1">IP</th>
+                            <th class="py-1">Uptime</th>
+                            <th class="py-1">Latência</th>
+                        </tr>
+                    </thead>
+                    <tbody id="all-ips-table" class="divide-y divide-white/10"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Modal Cadastro com Estilo da Imagem -->
+<div id="reg-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-none flex items-center justify-center z-50 p-4">
+    <div class="bg-black text-white border-2 border-white p-6 w-full max-w-md font-sans">
+        <div class="flex justify-between items-center border-b border-white/30 pb-3 mb-4">
+            <h2 class="text-lg font-black uppercase tracking-tight">[CADASTRAR DISPOSITIVO]</h2>
+            <button onclick="closeRegModal()" class="font-bold hover:text-gray-400">[X]</button>
+        </div>
+        <div class="space-y-4 text-xs font-bold uppercase">
+            <div>
+                <label class="block mb-1">Endereço IP</label>
+                <input type="text" id="reg-ip" placeholder="192.168.1.x" class="w-full bg-black border border-white p-2.5 text-white outline-none font-mono">
             </div>
             <div>
-                <label class="text-xs text-gray-400">Nome de Identificação</label>
-                <input type="text" id="reg-name" placeholder="Ex: iPhone do João" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white outline-none focus:border-blue-500">
+                <label class="block mb-1">Nome do Dispositivo</label>
+                <input type="text" id="reg-name" placeholder="Ex: Workstation A" class="w-full bg-black border border-white p-2.5 text-white outline-none font-mono">
             </div>
             <div>
-                <label class="text-xs text-gray-400">Tipo de Dispositivo</label>
-                <select id="reg-type" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white outline-none focus:border-blue-500">
+                <label class="block mb-1">Tipo de Dispositivo</label>
+                <select id="reg-type" class="w-full bg-black border border-white p-2.5 text-white outline-none font-mono">
                     <option value="Smartphone">Smartphone</option>
                     <option value="Laptop">Laptop / Notebook</option>
                     <option value="Desktop">Desktop PC</option>
@@ -94,9 +164,9 @@
                     <option value="SmartTV">Smart TV / IoT</option>
                 </select>
             </div>
-            <div class="flex gap-2 pt-2">
-                <button onclick="closeRegModal()" class="w-1/2 bg-gray-700 hover:bg-gray-600 text-white p-2 rounded transition">Cancelar</button>
-                <button onclick="salvarDispositivo()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded transition font-bold">Salvar</button>
+            <div class="flex gap-3 pt-2">
+                <button onclick="closeRegModal()" class="w-1/2 border border-white py-2 hover:bg-white/10 transition">Cancelar</button>
+                <button onclick="salvarDispositivo()" class="w-1/2 bg-white text-black py-2 font-black hover:bg-gray-200 transition">Salvar</button>
             </div>
         </div>
     </div>
