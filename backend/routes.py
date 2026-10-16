@@ -7,7 +7,7 @@ import psutil
 from concurrent.futures import ThreadPoolExecutor
 from flask import Blueprint, jsonify, request, render_template
 import requests
-from .config import ROUTER_IP, INTERFACE_IP_PREFIX
+from .config import ROUTER_IP, INTERFACE_IP_PREFIX, MEU_PC_IP
 from .database import REGISTERED_DEVICES, DEVICE_FIRST_SEEN, STATE
 import collections
 # Adicione isso junto com o DEVICE_FIRST_SEEN no topo do seu arquivo:
@@ -75,28 +75,16 @@ import time
 DEVICE_MISSING_COUNT = collections.defaultdict(int) 
 
 def rotina_varredura_rede():
-    # Descobre o IP do próprio PC para garantir que ele apareça no painel
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        MEU_PC_IP = s.getsockname()[0]
-        s.close()
-    except Exception:
-        MEU_PC_IP = None
-
     while True:
         todos_os_ips = [f"{INTERFACE_IP_PREFIX}{i}" for i in range(1, 255)]
         
-        # 50 workers para evitar gargalos excessivos de processos no sistema
         with ThreadPoolExecutor(max_workers=50) as executor:
             executor.map(forcar_ping_rapido, todos_os_ips)
             
         try:
-            # Timeout de 5.0 segundos para suportar lentidões do SO
             resultado = subprocess.run(["arp", "-a"], stdout=subprocess.PIPE, text=True, timeout=5.0)
             linhas = resultado.stdout.split("\n")
         except Exception:
-            # Pula este ciclo de varredura se o comando travar, mantendo o painel intacto
             time.sleep(2)
             continue
 
@@ -106,12 +94,10 @@ def rotina_varredura_rede():
         ips_online_agora = []
         agora = time.time()
         
-        # Filtra e limpa resultados nulos da varredura ARP
         resultados_validos = [r for r in resultados if r]
         ips_detectados_no_arp = [r["ip"] for r in resultados_validos]
 
-        # --- TRATAMENTO 1 e 2: Forçar a inclusão do Roteador e do Próprio PC ---
-        # (O Windows não lista o próprio IP no arp -a, e às vezes omite o roteador)
+        # Força a inclusão do Roteador e do Próprio PC baseada na interface escolhida
         for ip_obrigatorio in [ROUTER_IP, MEU_PC_IP]:
             if ip_obrigatorio and ip_obrigatorio not in ips_detectados_no_arp:
                 lat = calcular_latencia(ip_obrigatorio) if ip_obrigatorio == ROUTER_IP else 0
@@ -121,7 +107,6 @@ def rotina_varredura_rede():
                     "mac": "Interface Local" if ip_obrigatorio == MEU_PC_IP else "N/A"
                 })
                 ips_detectados_no_arp.append(ip_obrigatorio)
-
         # Processa quem foi visto nesta varredura
         for r in resultados_validos:
             ip = r["ip"]
